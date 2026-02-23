@@ -102,6 +102,26 @@ st.markdown("""
             padding-bottom: 8px !important;
             margin-bottom: 20px !important;
         }
+            /* Stable card layout for metrics to avoid jitter */
+            .custom-card {
+                background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%) !important;
+                border-radius: 12px !important;
+                padding: 18px !important;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important;
+                min-height: 110px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                transition: none !important;
+            }
+            .custom-card .label { color: #6c757d !important; font-weight:600 !important; font-size:13px !important; margin-bottom:6px !important; }
+            .custom-card .value { color: #212529 !important; font-weight:700 !important; font-size:22px !important; }
+            .custom-card .delta { color: #2ecc71 !important; font-size:12px !important; margin-top:6px !important; }
+            /* Ensure consistent spacing between columns */
+            .stColumns > div {
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
+            }
     </style>
 """, unsafe_allow_html=True)
 
@@ -279,9 +299,24 @@ def create_feedback_charts(history):
     return fig_energy, fig_temp
 
 
+def render_card(label, value, delta=None, help_text=None):
+    """Render a stable card using HTML to avoid Streamlit metric jitter."""
+    delta_html = f"<div class='delta'>{delta}</div>" if delta else ""
+    help_html = f"<div style='font-size:11px;color:#8898a6;margin-top:6px'>{help_text}</div>" if help_text else ""
+    card_html = (
+        "<div class='custom-card'>"
+        f"<div class='label'>{label}</div>"
+        f"<div class='value'>{value}</div>"
+        f"{delta_html}"
+        f"{help_html}"
+        "</div>"
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
 # --- Main App ---
 def main():
-    st.title("❄️ UrbanCool: AI-Driven Weather-Responsive Cooling System")
+    st.title("UrbanCool — AI-Driven Weather-Responsive Cooling System")
     st.markdown("##### *Cooling Smarter. Living Better.*")
 
 
@@ -298,12 +333,12 @@ def main():
 
 
     # Intro Card
-    st.subheader("🚀 Introducing UrbanCool")
+    st.subheader(" Introducing UrbanCool")
     st.info("UrbanCool is an AI-driven orchestration system that fuses weather forecasts, heat island maps, and human presence metrics to deliver **targeted, efficient cooling** across cities. It reduces wasted energy, improves comfort, and ensures safer public spaces.")
 
 
     # Problem Context
-    st.subheader("🌍 The Urban Heat Island Problem")
+    st.subheader(" The Urban Heat Island Problem")
     st.markdown("Urban environments trap heat, creating **heat islands** that raise local temperatures by several degrees, wasting energy, raising costs, and reducing comfort.")
 
 
@@ -395,20 +430,20 @@ def main():
 
 
     # --- Dashboard Layout ---
-    st.subheader("📊 Data Fusion Panel")
+    st.subheader("Data Fusion Panel")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("🌡️ Weather Forecast", f"{temp:.1f}°C", delta=f"Feels like {heat_index:.1f}°C")
+        render_card("🌡️ Weather Forecast", f"{temp:.1f}°C", delta=f"Feels like {heat_index:.1f}°C")
     with col2:
         avg_risk = np.mean(list(zone_predictions.values()))
-        st.metric("🗺️ Heat Island Index", f"{avg_risk:.2f}", help="Average risk across all zones")
+        render_card("🗺️ Heat Island Index", f"{avg_risk:.2f}", help_text="Average risk across all zones")
     with col3:
         total_people = sum(crowd_data.values())
-        st.metric("👥 Human Presence", f"{total_people} Est.", delta="Real-time IoT Counts")
+        render_card("👥 Human Presence", f"{total_people} Est.", delta="Real-time IoT Counts")
 
 
     # AI Prediction & Device Control
-    st.subheader("🤖 AI Prediction & Control Simulation")
+    st.subheader("AI Prediction & Control Simulation")
     col1, col2 = st.columns([0.4, 0.6])
     with col1:
         st.plotly_chart(create_heatmap(zone_predictions), use_container_width=True)
@@ -418,7 +453,7 @@ def main():
 
 
     # Feedback Loop
-    st.subheader("🔄 System Feedback Loop")
+    st.subheader("System Feedback Loop")
     st.info("🔄 AI model retrains every 5 minutes using live data on energy usage and temperature drops.")
     
     if st.session_state.history:
@@ -431,7 +466,7 @@ def main():
 
 
     # Benefits Panel
-    st.subheader("📈 Performance & Benefits")
+    st.subheader("Performance & Benefits")
     energy_saved_pct = (1 - ai_energy / baseline_energy) * 100 if baseline_energy > 0 else 0
     comfort_index = temp_drop / (total_people + 1) * 1000
     safe_zones = sum(1 for score in zone_predictions.values() if score < 0.4)
@@ -440,19 +475,19 @@ def main():
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("⚡ Energy Saved", f"{energy_saved_pct:.1f}%", delta="vs static schedule")
+        render_card("⚡ Energy Saved", f"{energy_saved_pct:.1f}%", delta="vs static schedule")
     with col2:
-        st.metric("💰 Cost Savings", f"₹{ai_energy*5:.0f}/hr", help="Estimated reduction in electricity cost")
+        render_card("💰 Cost Savings", f"₹{ai_energy*5:.0f}/hr", help_text="Estimated reduction in electricity cost")
     with col3:
-        st.metric("😊 Comfort Index", f"{comfort_index:.2f}", help="Temperature reduction per person")
+        render_card("😊 Comfort Index", f"{comfort_index:.2f}", help_text="Temperature reduction per person")
     with col4:
-        st.metric("✅ Safe Zones", f"{safe_zones}/10", help="Zones under safe heat risk")
+        render_card("✅ Safe Zones", f"{safe_zones}/10", help_text="Zones under safe heat risk")
     with col5:
-        st.metric("🛡️ Health Risk Reduction", f"{health_risk_reduction}%", help="Estimated reduction in heat illness risk")
+        render_card("🛡️ Health Risk Reduction", f"{health_risk_reduction}%", help_text="Estimated reduction in heat illness risk")
 
 
     # Grid Resilience
-    st.subheader("📉 Grid Resilience")
+    st.subheader("Grid Resilience")
     if st.session_state.history:
         df = pd.DataFrame(st.session_state.history)
         fig_grid = go.Figure()
@@ -476,7 +511,7 @@ def main():
 
 
     # System Status
-    st.subheader("⚠️ System Alerts & Maintenance")
+    st.subheader("System Alerts & Maintenance")
     if st.session_state.anomaly:
         st.error(f"🚨 Anomaly detected: {st.session_state.anomaly}")
     else:
@@ -493,7 +528,7 @@ def main():
 
 
     # Future-Proofing
-    st.subheader("🚀 Future-Proofing Simulation")
+    st.subheader(" Future-Proofing Simulation")
     projected_energy_saving = energy_saved_pct * scale_factor
     projected_safe_zones = safe_zones * scale_factor
     co2_saved = energy_saved_pct * 0.8
@@ -501,12 +536,11 @@ def main():
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("🌍 Projected Energy Savings", f"{projected_energy_saving:.1f}%", 
-                 help=f"Across {scale_factor} neighborhoods")
+        render_card("🌍 Projected Energy Savings", f"{projected_energy_saving:.1f}%", help_text=f"Across {scale_factor} neighborhoods")
     with col2:
-        st.metric("🏙️ Projected Safe Zones", f"{projected_safe_zones} total")
+        render_card("🏙️ Projected Safe Zones", f"{projected_safe_zones} total")
     with col3:
-        st.metric("🌱 Estimated CO₂ Saved", f"{co2_saved:.1f} kg/hr")
+        render_card("🌱 Estimated CO₂ Saved", f"{co2_saved:.1f} kg/hr")
 
 
     # Auto-refresh logic (only if enabled)
